@@ -55,6 +55,9 @@ const SubGhzProtocol* const subghz_protocol_registry_items[] = {
     &subghz_protocol_feron,
     &subghz_protocol_roger,
     &subghz_protocol_elplast,
+    &subghz_protocol_hitag2,
+    &subghz_protocol_universal_vehicle,
+    &subghz_protocol_toyota_key,
 };
 
 const SubGhzProtocolRegistry subghz_protocol_registry = {

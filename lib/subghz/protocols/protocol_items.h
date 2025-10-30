@@ -56,3 +56,6 @@
 #include "feron.h"
 #include "roger.h"
 #include "elplast.h"
+#include "hitag2.h"
+#include "universal_vehicle.h"
+#include "toyota_key.h"
