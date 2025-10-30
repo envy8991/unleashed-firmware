@@ -6,6 +6,7 @@
 #include "../blocks/encoder.h"
 #include "../blocks/generic.h"
 #include "../blocks/math.h"
+#include "../blocks/rolling_code.h"
 
 #include "../blocks/custom_btn_i.h"
 
@@ -124,26 +125,34 @@ static bool subghz_protocol_somfy_telis_gen_data(
 
     btn = subghz_protocol_somfy_telis_get_btn_code();
 
-    // Check for OFEX (overflow experimental) mode
-    if(furi_hal_subghz_get_rolling_counter_mult() != 0xFFFE) {
-        if(instance->generic.cnt < 0xFFFF) {
-            if((instance->generic.cnt + furi_hal_subghz_get_rolling_counter_mult()) > 0xFFFF) {
-                instance->generic.cnt = 0;
-            } else {
-                instance->generic.cnt += furi_hal_subghz_get_rolling_counter_mult();
-            }
-        } else if(
-            (instance->generic.cnt >= 0xFFFF) &&
-            (furi_hal_subghz_get_rolling_counter_mult() != 0)) {
-            instance->generic.cnt = 0;
-        }
+    // Enhanced counter increment using improved rolling code system
+    int32_t mult = furi_hal_subghz_get_rolling_counter_mult();
+    bool use_ofex = (mult == 0xFFFE);
+    uint32_t new_counter = 0;
+
+    if(rolling_code_increment_universal(
+           instance->generic.cnt, mult, 0xFFFF, use_ofex, &new_counter)) {
+        instance->generic.cnt = new_counter;
     } else {
-        if((instance->generic.cnt + 0x1) > 0xFFFF) {
-            instance->generic.cnt = 0;
-        } else if(instance->generic.cnt >= 0x1 && instance->generic.cnt != 0xFFFE) {
-            instance->generic.cnt = furi_hal_subghz_get_rolling_counter_mult();
+        // Fallback to original logic if universal increment fails
+        if(mult != 0xFFFE) {
+            if(instance->generic.cnt < 0xFFFF) {
+                if((instance->generic.cnt + mult) > 0xFFFF) {
+                    instance->generic.cnt = 0;
+                } else {
+                    instance->generic.cnt += mult;
+                }
+            } else if((instance->generic.cnt >= 0xFFFF) && (mult != 0)) {
+                instance->generic.cnt = 0;
+            }
         } else {
-            instance->generic.cnt++;
+            if((instance->generic.cnt + 0x1) > 0xFFFF) {
+                instance->generic.cnt = 0;
+            } else if(instance->generic.cnt >= 0x1 && instance->generic.cnt != 0xFFFE) {
+                instance->generic.cnt = mult;
+            } else {
+                instance->generic.cnt++;
+            }
         }
     }
 
